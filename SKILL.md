@@ -1,7 +1,7 @@
 ---
 name: barren-order
 description: 荒原序列 · BarrenOrder — 让多个Hermes Bot在同一个飞书群内互相@通信，实现主持者/执行者分工模式。开箱即用，配置模板分离设计。
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 metadata:
@@ -148,3 +148,45 @@ barren-order/
 2. 每个Bot都知道自己在群里的角色（主持者/执行者）
 3. 每个Bot的memory中都正确配置了其他Bot的open_id
 4. 配置模板已填写并通过校验
+
+---
+
+## v1.1.0 新增能力
+
+### DAG工作流引擎 (`scripts/workflow_engine.py`)
+
+对标 Dify/CrewAI 的核心编排：
+
+| 能力 | 说明 |
+|------|------|
+| DAG依赖解析 | 拓扑排序 + 环检测，确保工作流无死锁 |
+| 并行执行 | 无依赖的独立任务自动并行 |
+| 条件分支 | `BranchCondition` 支持 equals/contains/success/failed 等 |
+| 重试机制 | 每个任务独立配置 max_retries + retry_delay |
+| 上下文传递 | `{{task_xxx_output}}` 模板变量自动替换 |
+| 状态持久化 | 执行状态可保存到磁盘，支持恢复 |
+| 工作流模板 | 内置研究-撰写-审核流水线、并行多维分析 |
+
+关键类：
+- `WorkflowBuilder` — 流式API构建工作流
+- `WorkflowExecutor` — 执行引擎
+- `WorkflowDefinition` — 工作流数据模型（支持JSON序列化）
+
+### 共享Agent记忆 (`scripts/shared_memory.py`)
+
+对标 CrewAI 的 memory 系统：
+
+| 能力 | 说明 |
+|------|------|
+| 命名空间隔离 | GLOBAL / AGENT / SESSION / WORKFLOW 四级作用域 |
+| TTL过期 | 条目可设生存时间，自动清理 |
+| 任务上下文 | 工作流任务间共享状态 |
+| 对话历史 | 按角色记录，支持摘要生成 |
+| 快照/恢复 | 创建检查点，支持磁盘持久化 |
+| 全文搜索 | 跨所有记忆条目检索 |
+| Agent上下文构建 | `AgentContextBuilder` 为指定Agent组装prompt上下文 |
+
+关键类：
+- `SharedMemory` — 核心记忆存储
+- `AgentContextBuilder` — Agent上下文组装器
+- `MemoryScope` — 作用域枚举

@@ -126,6 +126,45 @@ class MessageRouter:
             for aid, a in cls._agents.items()
         }
 
+    @classmethod
+    def get_agent(cls, agent_id: str) -> Optional[AgentCard]:
+        """Retrieve an agent card by ID."""
+        return cls._agents.get(agent_id)
+
+    @classmethod
+    def find_agents_by_capability(cls, keyword: str) -> list[AgentCard]:
+        """Find all available agents that can handle a given keyword."""
+        return [
+            a for a in cls._agents.values()
+            if a.is_available() and a.can_handle(keyword)
+        ]
+
+    @classmethod
+    def unregister_agent(cls, agent_id: str) -> bool:
+        """Remove an agent from the registry."""
+        if agent_id in cls._agents:
+            del cls._agents[agent_id]
+            return True
+        return False
+
+    @classmethod
+    def route_with_context(
+        cls,
+ message: RelayMessage,
+ context: dict,
+ ) -> Optional[str]:
+        """Route with shared context — enables memory-aware routing.
+
+        If context contains 'preferred_agent', try that first.
+        Falls back to standard routing logic.
+        """
+        preferred = context.get("preferred_agent")
+        if preferred and preferred in cls._agents:
+            agent = cls._agents[preferred]
+            if agent.is_available():
+                return preferred
+        return cls.route(message)
+
 
 if __name__ == "__main__":
     MessageRouter.register_agent(AgentCard(

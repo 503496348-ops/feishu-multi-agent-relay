@@ -47,7 +47,10 @@ barren-order/
 │   ├── 消息格式规范.md             # @标签正确/错误写法
 │   └── 故障排查清单.md             # 常见问题排查
 └── scripts/
-    └── validate_config.py          # 配置校验脚本
+    ├── validate_config.py          # 配置校验脚本
+    ├── message_router.py           # 优先级路由 + 断路器 + 上下文感知路由
+    ├── workflow_engine.py          # ⭐ DAG工作流引擎（顺序/并行/条件分支）
+    └── shared_memory.py            # ⭐ 多Agent共享记忆与上下文管理
 ```
 
 ## 核心原理
@@ -67,3 +70,54 @@ barren-order/
 ## 更多信息
 
 详见 [SKILL.md](SKILL.md)
+
+---
+
+## ⭐ 新增能力（v1.1.0）
+
+### 1. DAG工作流引擎 (`scripts/workflow_engine.py`)
+
+对标 Dify/CrewAI 的核心编排能力：
+- **顺序/并行执行**：任务自动按依赖拓扑排序，独立任务并行执行
+- **条件分支**：基于上游输出的 `equals` / `contains` / `success` / `failed` 等条件路由
+- **重试与超时**：每个任务可独立配置 `max_retries` / `timeout` / `retry_delay`
+- **流式上下文传递**：任务输出自动注入 `shared context`，下游任务用 `{{task_xxx_output}}` 引用
+- **状态持久化**：工作流执行状态可保存/恢复
+
+```python
+from scripts.workflow_engine import WorkflowBuilder, WorkflowExecutor
+
+wf = (WorkflowBuilder("demo", "我的工作流")
+    .add_task("step1", "研究", prompt="研究{{user_query}}", agent_id="researcher")
+    .add_task("step2", "撰写", prompt="写报告", agent_id="writer", depends_on=["step1"])
+    .build())
+
+executor = WorkflowExecutor(wf)
+result = executor.run(initial_context={"user_query": "AI趋势"})
+```
+
+内置模板：
+- `create_research_report_workflow()` — 研究→撰写→审核流水线
+- `create_parallel_analysis_workflow()` — 多Agent并行分析→综合
+
+### 2. 共享Agent记忆 (`scripts/shared_memory.py`)
+
+对标 CrewAI 的 memory 系统：
+- **命名空间隔离**：`GLOBAL`（全局共享）/ `AGENT`（Agent私有）/ `SESSION` / `WORKFLOW`
+- **TTL自动过期**：支持带过期时间的记忆条目
+- **任务上下文**：`set_task_context()` / `get_task_context()` 在工作流任务间传递状态
+- **对话历史**：按角色记录多Agent对话，支持 `get_conversation_summary()` 注入prompt
+- **快照/恢复**：`create_snapshot()` / `restore_snapshot()` 实现检查点
+- **全文搜索**：`memory.search("关键词")` 跨所有记忆条目检索
+- **磁盘持久化**：自动/手动保存到JSON文件
+
+```python
+from scripts.shared_memory import SharedMemory, MemoryScope, AgentContextBuilder
+
+memory = SharedMemory(persist_path=Path("memory.json"))
+memory.set("user_query", "分析市场", scope=MemoryScope.GLOBAL)
+memory.set_task_context("research_data", "...")
+
+# 为特定Agent构建上下文
+ctx = AgentContextBuilder(memory, "bot_a").build_context()
+```
