@@ -8,6 +8,13 @@ metadata:
   hermes:
     tags: [飞书, 多Agent, 跨实例, 协作协议, Bot通信]
     related_skills: [feishu-bot-at-format]
+
+triggers:
+  - 多Agent协作
+  - 任务编排
+  - DAG工作流
+  - barren-order
+  - 荒原序列
 ---
 
 # 荒原序列 · BarrenOrder
