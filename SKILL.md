@@ -1,6 +1,6 @@
 ---
 name: barren-order
-description: 荒原序列 · BarrenOrder — 让多个Hermes Bot在同一个飞书群内互相@通信，实现主持者/执行者分工模式。开箱即用，配置模板分离设计。
+description: "飞书群多Bot协作引擎。主从分工·@通信协议·任务编排·共享记忆。当需要配置多Bot协作、编排复杂任务、实现Bot间通信时使用。"
 version: 1.1.0
 author: Hermes Agent
 license: MIT
