@@ -106,3 +106,11 @@ AtomCollide-智械工坊团队出品。更多产品见：[AtomCollide Product Ma
 
 > 维护要求：后续每次发布都应把真实运行截图、CLI 输出、网页截图或 API 响应样例补充到本节，避免仓库首页只描述能力、不展示结果。
 
+## Governance Links
+
+- [LICENSE](LICENSE)
+- [CHANGELOG](CHANGELOG.md)
+- [SECURITY](SECURITY.md)
+- [CONTRIBUTING](CONTRIBUTING.md)
+
+
