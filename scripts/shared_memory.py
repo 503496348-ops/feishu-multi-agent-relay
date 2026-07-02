@@ -564,6 +564,147 @@ class AgentContextBuilder:
 
 
 # ---------------------------------------------------------------------------
+# Team Experience Store
+# ---------------------------------------------------------------------------
+
+@dataclass
+class TeamExperienceEntry:
+    """Shared team experience item with optional pinning.
+
+    Pinned entries are the always-injected core; unpinned long-tail entries are
+    recalled on demand and evicted first when the cap is exceeded.
+    """
+    id: str
+    kind: str
+    content: str
+    by: str = ""
+    ref: str = ""
+    pin: bool = False
+    created_at: float = field(default_factory=time.time)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "kind": self.kind,
+            "content": self.content,
+            "by": self.by,
+            "ref": self.ref,
+            "pin": self.pin,
+            "created_at": self.created_at,
+        }
+
+
+class TeamExperienceStore:
+    """Append-only JSONL team experience store.
+
+    This complements SharedMemory: SharedMemory is structured context; team
+    experience is operational wisdom shared across agents.
+    """
+
+    def __init__(self, path: Optional[Path] = None, max_entries: int = 200):
+        self.path = path
+        self.max_entries = max_entries
+        self._lock = threading.RLock()
+        self._entries: list[TeamExperienceEntry] = []
+        self._seq = 0
+        if path and path.exists():
+            self._load()
+
+    def append(self, kind: str, content: str, *, by: str = "", ref: str = "", pin: bool = False) -> TeamExperienceEntry:
+        if not content.strip():
+            raise ValueError("experience content cannot be empty")
+        with self._lock:
+            self._seq += 1
+            entry = TeamExperienceEntry(
+                id=f"E-{self._seq}",
+                kind=kind,
+                content=content,
+                by=by,
+                ref=ref,
+                pin=pin,
+            )
+            self._entries.append(entry)
+            self._enforce_cap()
+            self._persist()
+            return entry
+
+    def pinned(self) -> list[dict]:
+        with self._lock:
+            return [entry.to_dict() for entry in self._entries if entry.pin]
+
+    def recall(self, query: str = "", *, limit: int = 10, include_pinned: bool = False) -> list[dict]:
+        query_lower = query.lower().strip()
+        with self._lock:
+            results: list[TeamExperienceEntry] = []
+            for entry in reversed(self._entries):
+                if entry.pin and not include_pinned:
+                    continue
+                haystack = f"{entry.kind}\n{entry.content}\n{entry.by}\n{entry.ref}".lower()
+                if not query_lower or query_lower in haystack:
+                    results.append(entry)
+                if len(results) >= limit:
+                    break
+            return [entry.to_dict() for entry in results]
+
+    def build_core_prompt(self) -> str:
+        pinned = self.pinned()
+        if not pinned:
+            return ""
+        lines = ["[团队固定经验]"]
+        for entry in pinned:
+            lines.append(f"- {entry['id']} [{entry['kind']}] {entry['content']}")
+        return "\n".join(lines)
+
+    def stats(self) -> dict:
+        with self._lock:
+            return {
+                "total_entries": len(self._entries),
+                "pinned_entries": sum(1 for e in self._entries if e.pin),
+                "max_entries": self.max_entries,
+            }
+
+    def _enforce_cap(self) -> None:
+        while len(self._entries) > self.max_entries:
+            for idx, entry in enumerate(self._entries):
+                if not entry.pin:
+                    del self._entries[idx]
+                    break
+            else:
+                # All entries are pinned; preserve them rather than deleting core.
+                break
+
+    def _persist(self) -> None:
+        if not self.path:
+            return
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        payload = "\n".join(json.dumps(entry.to_dict(), ensure_ascii=False) for entry in self._entries)
+        self.path.write_text(payload + ("\n" if payload else ""), encoding="utf-8")
+
+    def _load(self) -> None:
+        if not self.path:
+            return
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            raw = json.loads(line)
+            entry = TeamExperienceEntry(
+                id=raw["id"],
+                kind=raw["kind"],
+                content=raw["content"],
+                by=raw.get("by", ""),
+                ref=raw.get("ref", ""),
+                pin=raw.get("pin", False),
+                created_at=raw.get("created_at", 0),
+            )
+            self._entries.append(entry)
+            try:
+                self._seq = max(self._seq, int(entry.id.split("-", 1)[1]))
+            except (IndexError, ValueError):
+                pass
+        self._enforce_cap()
+
+
+# ---------------------------------------------------------------------------
 # CLI Demo
 # ---------------------------------------------------------------------------
 

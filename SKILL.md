@@ -1,7 +1,7 @@
 ---
 name: barren-order
 description: "飞书群多Bot协作引擎。主从分工·@通信协议·任务编排·共享记忆。当需要配置多Bot协作、编排复杂任务、实现Bot间通信时使用。"
-version: 1.1.0
+version: 1.2.0
 author: Hermes Agent
 license: MIT
 metadata:
@@ -79,6 +79,10 @@ barren-order/
 │   ├── 消息格式规范.md             # @标签的正确vs错误写法
 │   └── 故障排查清单.md             # 常见问题与解决路径
 └── scripts/
+    ├── message_router.py           # 运行时路由决策：manager-only、去重、drop reason
+    ├── task_state.py               # intent锚定 + 审批状态机
+    ├── shared_memory.py            # 共享记忆 + 团队经验池
+    ├── watchdog.py                 # PID/cmdline/heartbeat/agent状态健康验证
     └── validate_config.py          # 配置校验脚本
 ```
 
@@ -155,6 +159,52 @@ barren-order/
 2. 每个Bot都知道自己在群里的角色（主持者/执行者）
 3. 每个Bot的memory中都正确配置了其他Bot的open_id
 4. 配置模板已填写并通过校验
+
+---
+
+## v1.2.0 新增能力
+
+### 运行时路由状态机 (`scripts/message_router.py`)
+
+将“谁能处理”升级为“谁应该接住”：
+
+| 能力 | 说明 |
+|------|------|
+| 显式路由决策 | `RoutingDecision` 输出 `action/targets/reason/msg_id`，便于审计和监控 |
+| 主持者唯一入口 | 人类/未知发送者默认只路由到主持者，执行者不直接对用户发散响应 |
+| 执行者回报主持者 | worker 无显式目标时自动回到 manager，形成闭环 |
+| 稳定 drop reason | `no_msg_id/dedup/cross_team/bot_self/empty/agent_no_target` 等可量化原因 |
+| Slash 命令识别 | 零 LLM 正则识别 `/status` 等命令并交给主持者 |
+
+### intent锚定与审批状态机 (`scripts/task_state.py`)
+
+| 能力 | 说明 |
+|------|------|
+| 不可变原始意图 | `IntentRecord.raw_text` 保留用户原话，防止上下文压缩后任务漂移 |
+| 合法状态迁移 | `待处理/进行中/需审批/已完成/已取消` 有明确迁移规则 |
+| 审批硬暂停 | `需审批` 只能通过 `approve()` / `reject()` 离开 |
+| 终态冻结 | `已完成/已取消` 不能被普通 update 复活 |
+| JSON持久化 | 可落盘保存 tasks/intents/_meta |
+
+### 团队经验池 (`scripts/shared_memory.py`)
+
+在原有 `SharedMemory` 基础上新增 `TeamExperienceStore`：
+
+| 能力 | 说明 |
+|------|------|
+| JSONL经验池 | 追加式记录团队经验，ID形如 `E-1` |
+| pinned core | 固定经验始终可注入 prompt |
+| on-demand recall | 长尾经验按查询召回，不全量塞进上下文 |
+| 容量控制 | 超额时优先淘汰最旧未 pin 条目，保护核心规则 |
+
+### 健康验证 (`scripts/watchdog.py`)
+
+| 能力 | 说明 |
+|------|------|
+| PID验证 | 检查 pid_file 与进程存活 |
+| cmdline防PID复用 | 要求进程命令行包含预期片段 |
+| heartbeat新鲜度 | 区分进程活着但心跳停滞 |
+| agent状态探针 | 区分 `idle/busy/ready/healthy` 与 wedged/error 等退化状态 |
 
 ---
 

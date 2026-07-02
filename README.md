@@ -9,6 +9,7 @@
 - **主持者-执行者模式**: 战略Bot分配任务，执行Bot完成并汇报
 - **工作流编排**: DAG引擎，支持条件分支、并行执行、重试机制
 - **共享记忆**: 四级作用域（GLOBAL/AGENT/SESSION/WORKFLOW），TTL过期+快照恢复
+- **运行时防偏航**: 主持者唯一入口、intent锚定、审批硬暂停、健康验证
 
 ## 快速开始
 
@@ -32,8 +33,11 @@ barren-order start --bots bot-a,bot-b --mode coordinator-executor
 ## 技术架构
 
 - **通信层**: 飞书@mention消息解析与路由，支持Bot-to-Bot直接对话
+- **运行时路由**: `RoutingDecision` 输出稳定 reason code，支持 manager-only 入口、worker→manager 回报、去重、自循环/跨团队拦截
 - **任务调度**: DAG工作流引擎（WorkflowBuilder/WorkflowExecutor），支持条件分支和并行
-- **状态管理**: 四级作用域记忆系统（GLOBAL/AGENT/SESSION/WORKFLOW），TTL过期+快照恢复
+- **intent状态机**: 原始意图不可变，`需审批` 硬暂停，终态任务不可复活
+- **状态管理**: 四级作用域记忆系统（GLOBAL/AGENT/SESSION/WORKFLOW），TTL过期+快照恢复；团队经验池支持 pinned core + 按需召回
+- **健康验证**: PID/cmdline/heartbeat/agent probe 多层检查，避免“进程活着但协作已卡死”
 - **错误处理**: max_retries + retry_delay重试，降级策略，人工介入兜底
 
 ## API
