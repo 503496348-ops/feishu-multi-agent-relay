@@ -8,6 +8,11 @@ This repository follows a lightweight Keep-a-Changelog style and semantic versio
 
 - Governance baseline initialized.
 
+## 1.3.0 - Standing team runtime command surface
+
+- Added team runtime command-surface reference for manager-only ingress, worker evidence return, slash commands, deduplication, visibility filters, and approval gates.
+- Expanded Skill metadata and workflow guidance for observable standing multi-agent teams.
+
 ## 1.2.0 - Runtime semantics enhancement
 
 - Added explicit `RoutingDecision` router state machine with stable reason codes.

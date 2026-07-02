@@ -1,12 +1,12 @@
 ---
 name: barren-order
 description: "飞书群多Bot协作引擎。主从分工·@通信协议·任务编排·共享记忆。当需要配置多Bot协作、编排复杂任务、实现Bot间通信时使用。"
-version: 1.2.0
+version: 1.3.0
 author: 工坊
 license: MIT
 metadata:
   hermes:
-    tags: [飞书, 多Agent, 跨实例, 协作协议, Bot通信]
+    tags: [飞书, 多Agent, 跨实例, 协作协议, Bot通信, 常驻团队, 运行时路由]
     related_skills: [feishu-bot-at-format]
 
 triggers:
@@ -18,6 +18,20 @@ triggers:
 ---
 
 # 荒原序列 · BarrenOrder
+
+
+## 常驻团队运行时增强（v1.3.0）
+
+荒原序列新增“团队运行时命令面”规范，用于把多 Bot 协作从一次性 @ 派单升级为可观测、可恢复、可审批的常驻团队：
+
+- **Manager-only ingress**：用户消息只进入主持者，执行者不直接吃原始用户指令。
+- **Worker evidence return**：执行者只回传证据、状态、阻塞点，由主持者统一对外汇总。
+- **Slash command surface**：`/team`、`/health`、`/task create/pause/approve/reject`、`/tmux`、`/usage`。
+- **Dedup + catchup**：消息 ID 去重，重启补偿不能重复执行任务。
+- **Visibility filter**：外部群只展示必要卡片，完整过程进入审计日志。
+- **Approval gate**：高风险任务必须暂停等待确认，终态任务不可复活。
+
+执行细则见 `references/team-runtime-command-surface.md`。
 
 ## 这是什么
 

@@ -2,6 +2,10 @@
 
 多Bot协作解决方案 — 让两个或多个Hermes Bot在飞书群内通过互相@实现协作。
 
+## Standing Team Runtime
+
+BarrenOrder now includes a standing-team runtime command-surface specification: manager-only ingress, worker evidence return, slash-command operations, message deduplication, visibility filters, approval gates, and health verification. See `references/team-runtime-command-surface.md`.
+
 ## 概述
 
 荒原序列是一个多Agent协作框架，支持：
