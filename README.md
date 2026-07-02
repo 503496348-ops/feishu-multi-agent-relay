@@ -121,4 +121,8 @@ AtomCollide-智械工坊团队出品。更多产品见：[AtomCollide Product Ma
 - [SECURITY](SECURITY.md)
 - [CONTRIBUTING](CONTRIBUTING.md)
 
+## 会前情报任务流
 
+BarrenOrder 新增 `scripts/pre_meeting_taskflow.py`：主持者可把人物会前调研拆成自述线、旁观线、事件线、业务线四个 manager-only worker 任务。证据包必须覆盖四线且无阻塞，才进入最终会前简报。
+
+验证：`python3 -m pytest tests/test_pre_meeting_taskflow.py -v`

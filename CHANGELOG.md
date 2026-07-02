@@ -26,3 +26,7 @@ This repository follows a lightweight Keep-a-Changelog style and semantic versio
 
 - 荒原序列新增阶段证据 manifest：每个 passed 阶段必须带 artifact 与 verifier，防止无证据推进。
 
+## v1.4.0 — 会前情报任务流
+
+- 新增 `scripts/pre_meeting_taskflow.py`：四线并行人物情报计划、worker证据包、完整性门禁。
+- 新增 `tests/test_pre_meeting_taskflow.py`：验证四线任务生成、manager-only可见性、证据完整性检查。

@@ -1,7 +1,7 @@
 ---
 name: barren-order
 description: "飞书群多Bot协作引擎。主从分工·@通信协议·任务编排·共享记忆。当需要配置多Bot协作、编排复杂任务、实现Bot间通信时使用。"
-version: 1.3.0
+version: 1.4.0
 author: 工坊
 license: MIT
 metadata:
@@ -15,6 +15,8 @@ triggers:
   - DAG工作流
   - barren-order
   - 荒原序列
+  - 会前情报
+  - 人物调研
 ---
 
 # 荒原序列 · BarrenOrder
@@ -285,3 +287,17 @@ barren-order/
 
 - 荒原序列新增阶段证据 manifest：每个 passed 阶段必须带 artifact 与 verifier，防止无证据推进。
 
+## 会前情报任务流（v1.4.0）
+
+新增 `scripts/pre_meeting_taskflow.py`，把“见人前调研”固化为多 Agent 四线并行任务：
+
+- **自述线**：目标本人近期表达、访谈、文章、主页更新。
+- **旁观线**：社区、用户、同行、媒体如何评价目标，重点找自述/他述差异。
+- **事件线**：最近 90 天产品、融资、争议、演讲、任命等关键事件。
+- **业务线**：站在会面目的下提炼合作抓手、风险点和可直接开口的话术。
+
+所有 worker 默认 `manager_only`，只向主持者返回证据包；主持者统一对外输出，避免执行者直接吃原始用户指令或把半成品暴露到群里。
+
+### 证据门禁
+
+`validate_evidence_packets()` 要求四条线均返回可用证据且无 blocker，才允许进入最终会前简报合成。
