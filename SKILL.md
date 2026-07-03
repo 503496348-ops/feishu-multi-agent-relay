@@ -1,7 +1,7 @@
 ---
 name: barren-order
 description: "飞书群多Bot协作引擎。主从分工·@通信协议·任务编排·共享记忆。当需要配置多Bot协作、编排复杂任务、实现Bot间通信时使用。"
-version: 1.5.0
+version: 1.6.0
 author: 工坊
 license: MIT
 metadata:
@@ -240,7 +240,7 @@ barren-order/
 
 ### DAG工作流引擎 (`scripts/workflow_engine.py`)
 
-对标 Dify/CrewAI 的核心编排：
+面向主流工作流系统的核心编排：
 
 | 能力 | 说明 |
 |------|------|
@@ -259,7 +259,7 @@ barren-order/
 
 ### 共享Agent记忆 (`scripts/shared_memory.py`)
 
-对标 CrewAI 的 memory 系统：
+面向多执行者协作的 memory 系统：
 
 | 能力 | 说明 |
 |------|------|
@@ -313,3 +313,8 @@ barren-order/
 ### 证据门禁
 
 `validate_evidence_packets()` 要求四条线均返回可用证据且无 blocker，才允许进入最终会前简报合成。
+
+## 2026-07-03 运行时增强
+
+- 新增仓库级 Agent Flow 契约：支持任务输入模板渲染、审批字段校验、未知执行者引用检查。
+- 验证：新增模块通过 py_compile 和定向 pytest，代码不依赖外部服务。
